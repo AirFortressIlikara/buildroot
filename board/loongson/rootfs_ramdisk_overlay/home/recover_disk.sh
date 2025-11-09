@@ -108,10 +108,57 @@ uzip_rootfs()
 		fi
 	fi
 
-	echo "can observe process in screen"
-	pv $backup_mount_point/rootfs.tar.gz 2>$show_process_dev | tar -xzf - -C $root_mount_point;
-	if [ $? -ne 0 ]; then
-		error_inf_print "Error! unzip rootfs.tar.gz failed!"
+	# 检查并处理 rootfs.img 或 rootfs.tar.gz
+	if [ -f $backup_mount_point/rootfs.img ]; then
+		echo "Extract rootfs.img to root partition (this may take a few minutes)..."
+
+		mkdir -p /mnt/rootfs_img
+
+		# 创建 loop 设备并自动解析分区
+		loopdev=$(losetup -Pf --show "$backup_mount_point/rootfs.img")
+
+		# 等待系统生成分区节点（有时需要一点时间）
+		sleep 1
+
+		echo "[INFO] loop device created: ${loopdev}"
+
+		echo "[DEBUG] losetup devices after attaching image:"
+		losetup -a | grep "$loopdev"
+
+		# 找到第一个分区设备
+		if [ -b "${loopdev}p1" ]; then
+			target_part="${loopdev}p1"
+			echo "[INFO] Detected partition device: ${target_part}"
+		else
+			target_part="$loopdev"
+			echo "[WARN] No partition device detected. Fallback to ${target_part}"
+		fi
+
+		echo "[INFO] Mounting ${target_part} to /mnt/rootfs_img ..."
+
+
+		echo "Mounting $target_part ..."
+		if mount "$target_part" /mnt/rootfs_img; then
+			echo "Copying files to $root_mount_point ..."
+			rsync -a /mnt/rootfs_img/ "$root_mount_point/"
+			sync
+			umount /mnt/rootfs_img
+			rmdir /mnt/rootfs_img
+			losetup -D
+		else
+			error_inf_print "Error! Mount $target_part failed! Please check rootfs.img and try again."
+			losetup -D
+			rmdir /mnt/rootfs_img
+			exit 1
+		fi
+	elif [ -f $backup_mount_point/rootfs.tar.gz ]; then
+		echo "can observe process in screen"
+		pv $backup_mount_point/rootfs.tar.gz 2>$show_process_dev | tar -xzf - -C $root_mount_point;
+		if [ $? -ne 0 ]; then
+			error_inf_print "Error! unzip rootfs.tar.gz failed!"
+		fi
+	else
+		error_inf_print "Error! not found rootfs.img or rootfs.tar.gz in backup partition!"
 	fi
 
 	check_and_umount_for_safe;

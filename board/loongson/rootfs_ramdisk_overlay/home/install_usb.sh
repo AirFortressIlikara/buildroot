@@ -144,8 +144,8 @@ check_file_for_safe()
 	#检查是不是缺少部分文件，不然分了区才说没文件系统，那么原来的系统就会丢失。
 	#能来这里执行，就代表本来就有uImage
 	echo "-------------> stage1 check_file_for_safe <-------------"
-	if [ ! -f $usb_mount_point"/install/rootfs.tar.gz" ]; then
-		error_inf_print "Error! not found "$usb_mount_point"/install/rootfs.tar.gz please check your USB disk"
+	if [ ! -f $usb_mount_point"/install/rootfs.tar.gz" ] && [ ! -f $usb_mount_point"/install/rootfs.img" ]; then
+		error_inf_print "Error! not found "$usb_mount_point"/install/rootfs.tar.gz or rootfs.img please check your USB disk"
 		exit 1;
 	fi
 }
@@ -239,7 +239,7 @@ format_all_partition()
 }
 
 #相关分区
-#存放rootfs.tar.gz的分区 sda1或者sda4
+#存放rootfs.tar.gz或rootfs.img的分区 sda1或者sda4
 #U盘
 #把U盘里面的内核和文件系统复制到SSD
 copy_file_to_SSD()
@@ -269,9 +269,19 @@ copy_file_to_SSD()
 		cp -pv $usb_mount_point/install/uImage $2
 		wait $!
 
-		echo "      -----> copy rootfs.tar.gz (wait a few minutes)"
-		rsync -P $usb_mount_point/install/rootfs.tar.gz $2
-		wait $!
+		# 检查并复制文件系统文件
+		if [ -f $usb_mount_point/install/rootfs.img ]; then
+			echo "      -----> copy rootfs.img (wait a few minutes)"
+			rsync -P $usb_mount_point/install/rootfs.img $2
+			wait $!
+		elif [ -f $usb_mount_point/install/rootfs.tar.gz ]; then
+			echo "      -----> copy rootfs.tar.gz (wait a few minutes)"
+			rsync -P $usb_mount_point/install/rootfs.tar.gz $2
+			wait $!
+		else
+			error_inf_print "Error! not found rootfs.tar.gz or rootfs.img in USB install directory"
+			exit 1;
+		fi
 		sync
 
 		umount $2;

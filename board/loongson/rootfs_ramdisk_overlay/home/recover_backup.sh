@@ -128,8 +128,8 @@ check_file_for_safe()
 	if [ ! -f $backup_mount_point"/uImage" ]; then
 		error_inf_print "Error! not found uImage in backup partition!"
 	fi
-	if [ ! -f $backup_mount_point"/rootfs.tar.gz" ]; then
-		error_inf_print "Error! not found rootfs.tar.gz in backup partition!"
+	if [ ! -f $backup_mount_point"/rootfs.tar.gz" ] && [ ! -f $backup_mount_point"/rootfs.img" ]; then
+		error_inf_print "Error! not found rootfs.tar.gz or rootfs.img in backup partition!"
 	fi
 }
 

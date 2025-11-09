@@ -3,6 +3,7 @@
 ###1 dont delete
 tftp_ip=$1
 rootfs_name=rootfs.tar.gz
+rootfs_img_name=rootfs.img
 md5_name=md5.txt
 uImage_name=uImage
 recover_name=ramdisk.gz
@@ -11,6 +12,7 @@ recover_local_name=ramdisk.gz
 download_mount_point=$2
 
 download_rootfs_path="$download_mount_point/$rootfs_name"
+download_rootfs_img_path="$download_mount_point/$rootfs_img_name"
 download_md5_path="$download_mount_point/$md5_name"
 download_uImage_path="$download_mount_point/$uImage_name"
 download_recover_path="$download_mount_point/$recover_local_name"
@@ -64,8 +66,8 @@ check_file_for_safe()
 	#检查是不是缺少部分文件，不然分了区才说没文件系统，那么原来的系统就会丢失。
 	#能来这里执行，就代表本来就有uImage
 	echo "-------------> stage1 check_file_for_safe <-------------"
-	if [ ! -f "$download_rootfs_path" ]; then
-		error_inf_print "Error! not found "$rootfs_name" download failed!"
+	if [ ! -f "$download_rootfs_path" ] && [ ! -f "$download_rootfs_img_path" ]; then
+		error_inf_print "Error! not found "$rootfs_name" or "$rootfs_img_name" download failed!"
 		exit 1;
 	fi
 	if [ ! -f "$download_uImage_path" ]; then
@@ -76,8 +78,17 @@ check_file_for_safe()
 
 download_system()
 {
-	echo "$rootfs_name downloading...."
-	tftp -l "$download_rootfs_path" -r $rootfs_name -g $tftp_ip -b 65535
+	# 尝试下载 rootfs.img，如果失败则下载 rootfs.tar.gz
+	echo "try download $rootfs_img_name...."
+	tftp -l "$download_rootfs_img_path" -r $rootfs_img_name -g $tftp_ip -b 65535 2>/dev/null
+
+	if [ ! -f "$download_rootfs_img_path" ]; then
+		echo "$rootfs_name downloading...."
+		tftp -l "$download_rootfs_path" -r $rootfs_name -g $tftp_ip -b 65535
+	else
+		echo "$rootfs_img_name download success!"
+	fi
+
 	echo "$uImage_name downloading...."
 	tftp -l "$download_uImage_path" -r $uImage_name -g $tftp_ip -b 4096
 
@@ -85,15 +96,26 @@ download_system()
 		tftp -l "$download_md5_path" -r $md5_name -g $tftp_ip 2>/dev/null
 
 		if [ -f "$download_md5_path" ]; then
-			if [ -f "$download_rootfs_path" ]; then
-				ori_md5=$(cat "$download_md5_path" | cut -d ' ' -f1);
-				local_md5=$(md5sum "$download_rootfs_path" | cut -d ' ' -f1);
+			if [ ! -f "$download_rootfs_path" ] && [ ! -f "$download_rootfs_img_path" ]; then
+				# 检查 rootfs.img 的 MD5，如果不存在则检查 rootfs.tar.gz
+				if [ -f "$download_rootfs_img_path" ]; then
+					ori_md5=$(cat "$download_md5_path" | cut -d ' ' -f1);
+					local_md5=$(md5sum "$download_rootfs_img_path" | cut -d ' ' -f1);
+				elif [ -f "$download_rootfs_path" ]; then
+					ori_md5=$(cat "$download_md5_path" | cut -d ' ' -f1);
+					local_md5=$(md5sum "$download_rootfs_path" | cut -d ' ' -f1);
+				fi
 
 				if [ "$ori_md5" == "$local_md5" ]; then
 					echo "md5 check success!!!";
 				else
-					error_inf_print "md5 check failed!!! remove $rootfs_name";
-					rm "$download_rootfs_path"
+					error_inf_print "md5 check failed!!! remove rootfs file";
+					if [ -f "$download_rootfs_img_path" ]; then
+						rm "$download_rootfs_img_path"
+					fi
+					if [ -f "$download_rootfs_path" ]; then
+						rm "$download_rootfs_path"
+					fi
 				fi
 
 				rm "$download_md5_path"
