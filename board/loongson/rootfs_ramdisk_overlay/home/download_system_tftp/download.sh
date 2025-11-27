@@ -3,6 +3,7 @@
 ###1 dont delete
 tftp_ip=$1
 rootfs_name=rootfs.tar.gz
+rootfs_img_xz_name=rootfs.img.xz
 rootfs_img_name=rootfs.img
 md5_name=md5.txt
 uImage_name=uImage
@@ -12,6 +13,7 @@ recover_local_name=ramdisk.gz
 download_mount_point=$2
 
 download_rootfs_path="$download_mount_point/$rootfs_name"
+download_rootfs_img_xz_path="$download_mount_point/$rootfs_img_xz_name"
 download_rootfs_img_path="$download_mount_point/$rootfs_img_name"
 download_md5_path="$download_mount_point/$md5_name"
 download_uImage_path="$download_mount_point/$uImage_name"
@@ -78,9 +80,19 @@ check_file_for_safe()
 
 download_system()
 {
-	# 尝试下载 rootfs.img，如果失败则下载 rootfs.tar.gz
-	echo "try download $rootfs_img_name...."
-	tftp -l "$download_rootfs_img_path" -r $rootfs_img_name -g $tftp_ip -b 65535 2>/dev/null
+	# 尝试下载 rootfs.img.xz，如果失败则下载 rootfs.img
+	echo "try download $rootfs_img_xz_name...."
+	tftp -l "$download_rootfs_img_xz_path" -r $rootfs_img_xz_name -g $tftp_ip -b 65535 2>/dev/null
+
+	if [ ! -f "$download_rootfs_img_xz_path" ]; then
+		# 尝试下载 rootfs.img
+		echo "try download $rootfs_img_name...."
+		tftp -l "$download_rootfs_img_path" -r $rootfs_img_name -g $tftp_ip -b 65535 2>/dev/null
+	else
+		echo "$rootfs_img_xz_name download success!"
+		pv "$download_rootfs_img_xz_path" | xz -d > "${download_rootfs_img_path}"
+		rm "$download_rootfs_img_xz_path"
+	fi
 
 	if [ ! -f "$download_rootfs_img_path" ]; then
 		echo "$rootfs_name downloading...."

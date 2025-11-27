@@ -140,7 +140,7 @@ uzip_rootfs()
 		echo "Mounting $target_part ..."
 		if mount "$target_part" /mnt/rootfs_img; then
 			echo "Copying files to $root_mount_point ..."
-			rsync -a /mnt/rootfs_img/ "$root_mount_point/"
+			rsync -av /mnt/rootfs_img/ "$root_mount_point/"
 			sync
 			umount /mnt/rootfs_img
 			rmdir /mnt/rootfs_img

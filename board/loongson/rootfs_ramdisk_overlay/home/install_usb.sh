@@ -239,7 +239,7 @@ format_all_partition()
 }
 
 #相关分区
-#存放rootfs.tar.gz或rootfs.img的分区 sda1或者sda4
+#存放rootfs.tar.gz或rootfs.img或rootfs.img.xz的分区 sda1或者sda4
 #U盘
 #把U盘里面的内核和文件系统复制到SSD
 copy_file_to_SSD()
@@ -270,7 +270,11 @@ copy_file_to_SSD()
 		wait $!
 
 		# 检查并复制文件系统文件
-		if [ -f $usb_mount_point/install/rootfs.img ]; then
+		if [ -f $usb_mount_point/install/rootfs.img.xz ]; then
+			echo "      -----> extract rootfs.img.xz (wait a few minutes)"
+			xz -d -c "$usb_mount_point/install/rootfs.img.xz" | pv > "$2/rootfs.img"
+			wait $!
+		elif [ -f $usb_mount_point/install/rootfs.img ]; then
 			echo "      -----> copy rootfs.img (wait a few minutes)"
 			rsync -P $usb_mount_point/install/rootfs.img $2
 			wait $!
