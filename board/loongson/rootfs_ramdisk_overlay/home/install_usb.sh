@@ -142,7 +142,6 @@ error_inf_print()
 check_file_for_safe()
 {
 	#检查是不是缺少部分文件，不然分了区才说没文件系统，那么原来的系统就会丢失。
-	#能来这里执行，就代表本来就有uImage
 	echo "-------------> stage1 check_file_for_safe <-------------"
 	if [ ! -f $usb_mount_point"/install/rootfs.tar.gz" ] && [ ! -f $usb_mount_point"/install/rootfs.img" ]; then
 		error_inf_print "Error! not found "$usb_mount_point"/install/rootfs.tar.gz or rootfs.img please check your USB disk"
@@ -264,10 +263,6 @@ copy_file_to_SSD()
 			# fi
 			cp -pv /mnt/usb0/install/ramdisk.gz $2/ramdisk.gz
 		fi
-
-		echo "      -----> copy uImage"
-		cp -pv $usb_mount_point/install/uImage $2
-		wait $!
 
 		# 检查并复制文件系统文件
 		if [ -f $usb_mount_point/install/rootfs.img.xz ]; then

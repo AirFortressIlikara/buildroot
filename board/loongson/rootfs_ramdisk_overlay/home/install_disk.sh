@@ -221,42 +221,6 @@ uzip_rootfs()
 	return 0;
 }
 
-copy_uImage_to_boot()
-{
-	echo "-------------> stage2.2 copy uImage to /boot <-------------"
-	if [ -e $backup_partition ]; then
-		mount $backup_partition $backup_mount_point
-		sync;
-		mount $root_partition $root_mount_point
-		sync;
-
-		#保证boot文件存在
-		if [ ! -d $root_mount_point/boot ]; then
-			mkdir $root_mount_point/boot
-		fi
-
-		cp -a $backup_mount_point/uImage $root_mount_point/boot/
-		if [ $? -ne 0 ]; then
-			error_inf_print "Error! copy uImage failed! Please try again";
-		fi
-	else
-		mount $root_partition $root_mount_point
-		sync;
-
-		#保证boot文件存在
-		if [ ! -d $root_mount_point/boot ]; then
-			mkdir $root_mount_point/boot
-		fi
-
-		mv $root_mount_point/uImage $root_mount_point/boot/
-		if [ $? -ne 0 ]; then
-			error_inf_print "Error! copy uImage failed! Please try again";
-		fi
-	fi
-	check_and_umount_for_safe;
-	return 0;
-}
-
 copy_fstab()
 {
 	echo "-------------> stage2.3 copy fstab to /etc/fstab <-------------"
@@ -345,8 +309,6 @@ check_and_umount_for_safe()
 start_stage2()
 {
 	uzip_rootfs
-	echo ""
-	copy_uImage_to_boot
 	echo ""
 	copy_fstab;
 	echo ""

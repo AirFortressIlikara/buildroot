@@ -86,7 +86,6 @@ error_inf_print()
 # sda4 backup usb4
 
 #uzip_rootfs 解压文件系统到根文件分区 必要
-#copy_uimage_to_boot 复制内核到/boot目录（没做boot分区）必要
 #copy_file_to_data 复制home opt var到data分区 不一定，根据fstab而定
 
 uzip_rootfs()
@@ -159,25 +158,6 @@ uzip_rootfs()
 		fi
 	else
 		error_inf_print "Error! not found rootfs.img or rootfs.tar.gz in backup partition!"
-	fi
-
-	check_and_umount_for_safe;
-	return 0;
-}
-
-copy_uimage_to_boot()
-{
-	echo "-------------> stage2.2 copy_uimage_to_boot <-------------";
-
-	mount $root_partition $root_mount_point;
-	sync;
-	mount $backup_partition $backup_mount_point;
-	sync;
-
-	mkdir -p $root_mount_point/boot/
-	cp -a $backup_mount_point/uImage $root_mount_point/boot/;
-	if [ $? -ne 0 ]; then
-		error_inf_print "Error! copy uImage to /boot/ failed!"
 	fi
 
 	check_and_umount_for_safe;
@@ -282,7 +262,6 @@ start_stage2()
 	check_cmdline_ins_target
 	#执行三个阶段的操作
 	uzip_rootfs;
-	copy_uimage_to_boot;
 	copy_fstab;
 	if [ -e $data_partition ]; then
 		copy_file_to_data;

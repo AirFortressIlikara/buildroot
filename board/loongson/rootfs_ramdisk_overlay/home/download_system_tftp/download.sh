@@ -6,7 +6,6 @@ rootfs_name=rootfs.tar.gz
 rootfs_img_xz_name=rootfs.img.xz
 rootfs_img_name=rootfs.img
 md5_name=md5.txt
-uImage_name=uImage
 recover_name=ramdisk.gz
 recover_local_name=ramdisk.gz
 
@@ -16,7 +15,6 @@ download_rootfs_path="$download_mount_point/$rootfs_name"
 download_rootfs_img_xz_path="$download_mount_point/$rootfs_img_xz_name"
 download_rootfs_img_path="$download_mount_point/$rootfs_img_name"
 download_md5_path="$download_mount_point/$md5_name"
-download_uImage_path="$download_mount_point/$uImage_name"
 download_recover_path="$download_mount_point/$recover_local_name"
 
 root_partition="/dev/sda1"
@@ -66,14 +64,9 @@ error_inf_print()
 check_file_for_safe()
 {
 	#检查是不是缺少部分文件，不然分了区才说没文件系统，那么原来的系统就会丢失。
-	#能来这里执行，就代表本来就有uImage
 	echo "-------------> stage1 check_file_for_safe <-------------"
 	if [ ! -f "$download_rootfs_path" ] && [ ! -f "$download_rootfs_img_path" ]; then
 		error_inf_print "Error! not found "$rootfs_name" or "$rootfs_img_name" download failed!"
-		exit 1;
-	fi
-	if [ ! -f "$download_uImage_path" ]; then
-		error_inf_print "Error! not found "$uImage_name" download failed!"
 		exit 1;
 	fi
 }
@@ -100,9 +93,6 @@ download_system()
 	else
 		echo "$rootfs_img_name download success!"
 	fi
-
-	echo "$uImage_name downloading...."
-	tftp -l "$download_uImage_path" -r $uImage_name -g $tftp_ip -b 4096
 
 	if [ ! -z $md5_name ]; then
 		tftp -l "$download_md5_path" -r $md5_name -g $tftp_ip 2>/dev/null

@@ -124,10 +124,6 @@ check_file_for_safe()
 {
 	echo "-------------> stage1 check_file_for_safe <-------------"
 	#检查是不是缺少部分文件，不然格式化了才说没文件系统，那么原来的系统就会丢失。
-	#能来这里执行，就代表本来就有uImage
-	if [ ! -f $backup_mount_point"/uImage" ]; then
-		error_inf_print "Error! not found uImage in backup partition!"
-	fi
 	if [ ! -f $backup_mount_point"/rootfs.tar.gz" ] && [ ! -f $backup_mount_point"/rootfs.img" ]; then
 		error_inf_print "Error! not found rootfs.tar.gz or rootfs.img in backup partition!"
 	fi
