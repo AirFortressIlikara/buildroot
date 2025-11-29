@@ -200,6 +200,7 @@ uzip_rootfs()
 				umount /mnt/rootfs_img
 				rmdir /mnt/rootfs_img
 				losetup -D
+				rm -rv "$root_mount_point/rootfs.img"
 			else
 				error_inf_print "Error! Mount $target_part failed! Please check rootfs.img and try again."
 				losetup -D
@@ -212,7 +213,7 @@ uzip_rootfs()
 			if [ $? -ne 0 ]; then
 				error_inf_print "Error! unzip system failed! Please check rootfs.tar.gz and try again";
 			fi
-			rm -r $root_mount_point/rootfs.tar.gz
+			rm -rv $root_mount_point/rootfs.tar.gz
 		else
 			error_inf_print "Error! not found rootfs.img or rootfs.tar.gz in root partition!";
 		fi
